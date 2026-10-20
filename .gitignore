@@ -16,11 +16,24 @@ ENV/
 env.bak/
 venv.bak/
 
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
 # Common
 .env
 .env.local
 .vscode/
 
+# Local data (databases, uploaded copies, evaluation run artifacts)
+*.db
+*.sqlite3
+storage/
+backend/eval/runs/
+backend/eval/datasets/candidates/
+
 # Build and Temp files
 *.log
 .DS_Store
+*.tsbuildinfo
