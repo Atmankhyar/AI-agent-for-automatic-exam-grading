@@ -1,17 +1,15 @@
 import uuid as uuid_module
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.security import verify_password
+from app.core.security import decode_access_token, verify_password
 from app.models import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-settings = get_settings()
 
 
 def get_user_by_email(db: Session, email: str) -> User | None:
@@ -34,13 +32,13 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
-        subject: str = payload.get("sub")
-        if not subject:
+        payload = decode_access_token(token)
+        subject = payload.get("sub")
+        if not subject or not isinstance(subject, str):
             raise credentials_exception
         user_id = uuid_module.UUID(subject)
-    except (JWTError, ValueError):
-        raise credentials_exception
+    except (jwt.InvalidTokenError, ValueError):
+        raise credentials_exception from None
     user = db.get(User, user_id)
     if user is None:
         raise credentials_exception
